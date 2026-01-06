@@ -1,0 +1,103 @@
+1) Contexte
+
+Ce projet consiste à réaliser un data refinement complet à partir d’un dataset brut au format CSV : Cafe Sales (dirty data).
+L’objectif est de transformer une donnée volontairement “sale” (valeurs manquantes, formats incohérents, erreurs) en une donnée cohérente, exploitable et analysable, tout en justifiant les choix de nettoyage et transformation.
+
+Le dataset contient 10 000 lignes et 8 colonnes :
+
+Transaction ID, Item, Quantity, Price Per Unit, Total Spent, Payment Method, Location, Transaction Date.
+
+2) Problèmes de qualité détectés
+
+Lors de l’exploration, plusieurs problèmes ont été identifiés :
+
+(A) Problèmes de format / typage
+
+Toutes les colonnes étaient lues en texte (object), y compris des colonnes numériques comme Quantity, Price Per Unit, Total Spent.
+
+La colonne Transaction Date contenait des valeurs non valides (ex: UNKNOWN) empêchant l’analyse temporelle.
+
+(B) Valeurs manquantes
+Les colonnes les plus impactées :
+
+Location : ~32.65% manquants
+
+Payment Method : ~25.79% manquants
+
+Item : ~3.33% manquants
+
+Transaction Date : ~1.59% manquants
+
+(C) Valeurs “sales”
+
+Présence de valeurs comme UNKNOWN, ERROR dans plusieurs colonnes.
+
+Exemple : Total Spent contenait parfois ERROR.
+
+(D) Doublons
+
+Aucune ligne totalement dupliquée (0 doublon strict).
+
+3) Solutions et choix de nettoyage (avec justification)
+
+Les choix suivants ont été appliqués :
+
+(A) Standardisation des valeurs “sales”
+
+UNKNOWN, ERROR, chaînes vides ont été remplacées par des valeurs manquantes (NaN).
+ Justification : ces valeurs ne sont pas informatives et empêchent les conversions / calculs.
+
+(B) Conversion des types
+
+Quantity, Price Per Unit, Total Spent ont été converties en numérique.
+
+Transaction Date a été convertie en format date.
+ Justification : sans typage correct, l’analyse statistique et temporelle est impossible.
+
+(C) Correction de Total Spent
+
+Total Spent a été recalculé avec la formule :
+Total Spent = Quantity × Price Per Unit
+ Justification : c’est une variable dérivée ; la recalculer garantit la cohérence interne.
+
+(D) Suppression de lignes inutilisables
+
+Suppression des lignes où Item est manquant.
+ Justification : une transaction sans produit ne permet pas d’analyse produit / ventes.
+
+Suppression des lignes où Transaction Date est manquant.
+ Justification : le projet vise des analyses temporelles par mois, donc chaque vente doit avoir une date valide.
+
+Suppression des lignes où Quantity ou Price Per Unit est manquant (ou incohérent : <= 0).
+ Justification : sans quantité/prix, le montant de vente n’est pas fiable.
+
+(E) Gestion de Payment Method et Location sans “Unknown”
+
+Les manquants ont été remplacés par la valeur la plus fréquente (mode) dans chaque colonne.
+ Justification : ces colonnes contiennent beaucoup de manquants ; supprimer toutes ces lignes ferait perdre une part trop importante des données.
+Remplacer par le mode permet de conserver les transactions tout en restant simple et cohérent, en assumant une hypothèse.
+
+4) Résultat final
+
+Après nettoyage, le dataset final contient :
+
+8147 lignes et 8 colonnes dans clean_cafe_sales.csv
+
+Aucune date vide (condition nécessaire pour l’analyse temporelle)
+
+Aucun UNKNOWN (selon règle demandée)
+
+Ensuite, une étape de transformation a été effectuée pour enrichir l’analyse :
+
+Création de colonnes temporelles : Year, Month, Month Name, Day, Day Name
+
+Agrégation du chiffre d’affaires par mois (ex: monthly_revenue)
+
+Le dataset final enrichi est exporté dans :
+
+DATA/PROCESSED/final_cafe_sales.csv
+
+Limites (assumées)
+
+L’imputation par le mode pour Payment Method et Location introduit une hypothèse : les valeurs manquantes sont supposées similaires à la majorité.
+Ce choix a été privilégié pour conserver un maximum de lignes, vu le taux élevé de valeurs manquantes.
